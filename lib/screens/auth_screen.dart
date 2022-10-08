@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:course_unit_7/models/http_exception.dart';
+import '../models/http_exception.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

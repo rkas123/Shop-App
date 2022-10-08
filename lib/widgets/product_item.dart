@@ -5,6 +5,7 @@ import '../screens/product_details_screen.dart';
 
 import '../providers/product.dart';
 import '../providers/cart.dart';
+import '../providers/auth.dart';
 
 class ProductItem extends StatelessWidget {
   const ProductItem({Key? key}) : super(key: key);
@@ -14,6 +15,7 @@ class ProductItem extends StatelessWidget {
     final scaffoldMessenger = Scaffold.of(context);
     final loadedProduct = Provider.of<Product>(context, listen: false);
     final cart = Provider.of<Cart>(context, listen: false);
+    final auth = Provider.of<Auth>(context, listen: false);
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
       child: GridTile(
@@ -28,7 +30,8 @@ class ProductItem extends StatelessWidget {
               ),
               onPressed: () async {
                 try {
-                  await loadedProduct.toggleFavoriteStatus();
+                  await loadedProduct.toggleFavoriteStatus(
+                      auth.token as String, auth.userId);
                   scaffoldMessenger.hideCurrentSnackBar();
                   scaffoldMessenger.showSnackBar(const SnackBar(
                     content: Text('Favorite Status Changed'),
