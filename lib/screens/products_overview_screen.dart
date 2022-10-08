@@ -43,7 +43,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
         _isLoading = true;
       });
       Provider.of<Products>(context, listen: false)
-          .fetchAndSetProducts()
+          .fetchAndSetProducts(filterByUser: false)
           .catchError((error) {
         showDialog(
           context: context,

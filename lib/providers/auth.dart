@@ -5,9 +5,26 @@ import 'package:http/http.dart' as http;
 
 // AIzaSyBdJYLswsqQ_muRv0Fxpx384Lo0zc1XeyI
 class Auth with ChangeNotifier {
-  String _token = "";
-  DateTime _expiryDate = DateTime.now();
+  String? _token;
+  DateTime? _expiryDate;
   String _userId = "";
+
+  bool get isAuth {
+    return token != null;
+  }
+
+  String get userId {
+    return _userId;
+  }
+
+  String? get token {
+    if (_expiryDate != null &&
+        _expiryDate!.isAfter(DateTime.now()) &&
+        _token != null) {
+      return _token as String;
+    }
+    return null;
+  }
 
   Future<void> signup(String email, String password) async {
     final url = Uri.parse(
@@ -26,7 +43,12 @@ class Auth with ChangeNotifier {
       if (responseData['error'] != null) {
         throw HttpException(message: responseData['error']['message']);
       }
-      print(json.decode(response.body));
+      _token = responseData['idToken'];
+      _userId = responseData['localId'];
+      _expiryDate = DateTime.now()
+          .add(Duration(seconds: int.parse(responseData['expiresIn'])));
+
+      notifyListeners();
     } catch (error) {
       rethrow;
     }
@@ -43,6 +65,36 @@ class Auth with ChangeNotifier {
         'returnSecureToken': true,
       }),
     );
-    print(json.decode(response.body));
+    try {
+      final response = await http.post(
+        url,
+        body: json.encode({
+          'email': email,
+          'password': password,
+          'returnSecureToken': true,
+        }),
+      );
+      final responseData = json.decode(response.body);
+      if (responseData['error'] != null) {
+        throw HttpException(message: responseData['error']['message']);
+      }
+      _token = responseData['idToken'];
+      _userId = responseData['localId'];
+      _expiryDate = DateTime.now()
+          .add(Duration(seconds: int.parse(responseData['expiresIn'])));
+
+      notifyListeners();
+    } catch (error) {
+      rethrow;
+    }
   }
+
+  void logout() {
+    _token = null;
+    _userId = "";
+    _expiryDate = null;
+    notifyListeners();
+  }
+
+  void _autoLogout() {}
 }

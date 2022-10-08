@@ -8,12 +8,32 @@ import '../widgets/app_drawer.dart';
 
 import './edit_product_screen.dart';
 
-class UserProductsScreen extends StatelessWidget {
+class UserProductsScreen extends StatefulWidget {
   static const routeName = '/user-products-screen';
   const UserProductsScreen({Key? key}) : super(key: key);
 
+  @override
+  State<UserProductsScreen> createState() => _UserProductsScreenState();
+}
+
+class _UserProductsScreenState extends State<UserProductsScreen> {
+  bool _initialRenderDone = false;
+  bool _showloader = false;
   Future<void> _refreshProducts(BuildContext context) async {
-    return Provider.of<Products>(context, listen: false).fetchAndSetProducts();
+    return Provider.of<Products>(context, listen: false)
+        .fetchAndSetProducts(filterByUser: true);
+  }
+
+  @override
+  void didChangeDependencies() {
+    if (!_initialRenderDone) {
+      setState(() => _showloader = true);
+      _refreshProducts(context).then((_) {
+        _initialRenderDone = true;
+        setState(() => _showloader = false);
+      });
+    }
+    super.didChangeDependencies();
   }
 
   @override
@@ -32,25 +52,29 @@ class UserProductsScreen extends StatelessWidget {
         ],
       ),
       drawer: const AppDrawer(),
-      body: RefreshIndicator(
-        onRefresh: () => _refreshProducts(context),
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: ListView.builder(
-            itemBuilder: (ctx, index) => Column(
-              children: [
-                UserProductItem(
-                  title: products.items[index].title,
-                  url: products.items[index].imageUrl,
-                  id: products.items[index].id,
+      body: (_showloader == true)
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : RefreshIndicator(
+              onRefresh: () => _refreshProducts(context),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: ListView.builder(
+                  itemBuilder: (ctx, index) => Column(
+                    children: [
+                      UserProductItem(
+                        title: products.items[index].title,
+                        url: products.items[index].imageUrl,
+                        id: products.items[index].id,
+                      ),
+                      const Divider(),
+                    ],
+                  ),
+                  itemCount: products.items.length,
                 ),
-                const Divider(),
-              ],
+              ),
             ),
-            itemCount: products.items.length,
-          ),
-        ),
-      ),
     );
   }
 }
