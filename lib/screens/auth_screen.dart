@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:course_unit_7/models/http_exception.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -106,6 +107,24 @@ class _AuthCardState extends State<AuthCard> {
   var _isLoading = false;
   final _passwordController = TextEditingController();
 
+  void _showErrorDiaglog(final msg, BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('An error occured'),
+        content: Text(msg),
+        actions: [
+          FlatButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Okay'),
+          )
+        ],
+      ),
+    );
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
       // Invalid!
@@ -115,15 +134,25 @@ class _AuthCardState extends State<AuthCard> {
     setState(() {
       _isLoading = true;
     });
-    if (_authMode == AuthMode.Login) {
-      final authProvider = Provider.of<Auth>(context, listen: false);
-      await authProvider.login(
-          _authData['email'] as String, _authData['password'] as String);
-    } else {
-      final authProvider = Provider.of<Auth>(context, listen: false);
-      await authProvider.signup(
-          _authData['email'] as String, _authData['password'] as String);
+
+    try {
+      if (_authMode == AuthMode.Login) {
+        final authProvider = Provider.of<Auth>(context, listen: false);
+        await authProvider.login(
+            _authData['email'] as String, _authData['password'] as String);
+      } else {
+        final authProvider = Provider.of<Auth>(context, listen: false);
+        await authProvider.signup(
+            _authData['email'] as String, _authData['password'] as String);
+      }
+    } on HttpException catch (error) {
+      var errorMessage = 'Could not authenticate due to ${error.toString()}';
+      _showErrorDiaglog(errorMessage, context);
+    } catch (error) {
+      const errorMessage = 'Could not authenticate you, try again later';
+      _showErrorDiaglog(errorMessage, context);
     }
+
     setState(() {
       _isLoading = false;
     });
