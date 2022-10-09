@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import './screens/auth_screen.dart';
+import '../screens/splash_screen.dart';
 import './screens/product_details_screen.dart';
 import './screens/products_overview_screen.dart';
 import './screens/cart_screen.dart';
@@ -48,7 +49,26 @@ class MyApp extends StatelessWidget {
             accentColor: Colors.deepOrange,
             fontFamily: 'Lato',
           ),
-          home: !auth.isAuth ? AuthScreen() : const ProductsScreen(),
+          //Login Logic
+          //If we have auth data, then we can synchronously check whether we need to render HomeScreen() or not
+          //If we don't have auth data, we check for tokens in SharedPreferences. This is slow process, hence we use async await.
+          //We make use of FutureBuilder. If the ConnectionStatus is waiting, we return Splash Screen.
+          //If the autologin fails, we return AuthScreen. If autologins returns true, we still return AuthScreen.
+          //In autoLogin we are calling notifyListeners if the auth details were found, so the build function will be called anyways.
+          //LOGIC: Irrespective of the response of autoLogin(), we will return AuthScreen. If it returned true, build was called as autoLogin() calls notifyListeners and in
+          //the next build, auth.isAuth will be true.
+          home: !auth.isAuth
+              ? FutureBuilder(
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const SplashScreen();
+                    } else {
+                      return AuthScreen();
+                    }
+                  },
+                  future: auth.tryAutoLogin(),
+                )
+              : const ProductsScreen(),
           routes: {
             ProductDetailScreen.routeName: (ctx) => const ProductDetailScreen(),
             CartScreen.routeName: (ctx) => const CartScreen(),
